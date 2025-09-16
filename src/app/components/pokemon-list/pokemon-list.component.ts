@@ -382,6 +382,9 @@ export class PokemonListComponent {
     this.currentPage.set(event.pageIndex);
     this.itemsPerPage.set(event.pageSize);
     this.loading.set(false);
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }
 
   handlePokemonClick(pokemon: Pokemon): void {
