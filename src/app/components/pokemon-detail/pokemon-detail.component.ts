@@ -137,19 +137,19 @@ import { FormsModule } from '@angular/forms';
       <!-- Flavor Text -->
       <div class="mt-8 pt-6 border-t border-gray-200">
         <h3 class="text-2xl font-semibold mb-3 text-gray-800">Pokédex Entry</h3>
-        @if (isLoadingExtendedDetails() && !speciesData()) {
-        <p class="text-gray-500">Loading Pokédex entry...</p>
-        } @else if (speciesData()) {
-        <p class="text-gray-700 italic leading-relaxed">
-          {{ getFlavorText(speciesData()!) }}
-        </p>
-        } @else if (errorExtendedDetails() && !isLoadingExtendedDetails()) {
-        <p class="text-red-500">
-          Could not load Pokédex entry: {{ errorExtendedDetails() }}
-        </p>
-        } @else if (!isLoadingExtendedDetails()) {
-        <p class="text-gray-500">No Pokédex entry data available.</p>
-        }
+        <div [class.opacity-60]="isLoadingExtendedDetails()">
+          @if (speciesData()) {
+          <p class="text-gray-700 italic leading-relaxed">
+            {{ getFlavorText(speciesData()!) }}
+          </p>
+          } @else if (errorExtendedDetails() && !isLoadingExtendedDetails()) {
+          <p class="text-red-500">
+            Could not load Pokédex entry: {{ errorExtendedDetails() }}
+          </p>
+          } @else if (!isLoadingExtendedDetails()) {
+          <p class="text-gray-500">No Pokédex entry data available.</p>
+          }
+        </div>
       </div>
 
       <!-- Evolution Chain -->
@@ -157,44 +157,69 @@ import { FormsModule } from '@angular/forms';
         <h3 class="text-2xl font-semibold mb-4 text-gray-800">
           Evolution Chain
         </h3>
-        @if (isLoadingExtendedDetails() && !evolutionChain()) {
-        <p class="text-gray-500">Loading evolution details...</p>
-        } @else if (evolutionChain()) { @if (evolutionChain()!.chain &&
-        (evolutionChain()!.chain.evolves_to.length > 0 ||
-        evolutionChain()!.chain.pokemonInfo?.id !== pokemon()?.id ||
-        (evolutionChain()!.chain.evolves_to.length === 0 && pokemon()?.id ===
-        evolutionChain()!.chain.pokemonInfo?.id &&
-        !speciesData()?.evolves_from_species))) {
-        <div class="evolution-tree space-y-2">
-          <ng-container
-            [ngTemplateOutlet]="evolutionNodeTemplate"
-            [ngTemplateOutletContext]="{
-              $implicit: evolutionChain()!.chain,
-              isBase: true
-            }"
-          ></ng-container>
+        <div
+          [class.opacity-60]="isLoadingExtendedDetails()"
+          [class.pointer-events-none]="isLoadingExtendedDetails()"
+        >
+          @if (evolutionChain()) { @if (evolutionChain()!.chain &&
+          (evolutionChain()!.chain.evolves_to.length > 0 ||
+          evolutionChain()!.chain.pokemonInfo?.id !== pokemon()?.id ||
+          (evolutionChain()!.chain.evolves_to.length === 0 && pokemon()?.id ===
+          evolutionChain()!.chain.pokemonInfo?.id &&
+          !speciesData()?.evolves_from_species))) {
+          <div class="evolution-tree space-y-2">
+            <ng-container
+              [ngTemplateOutlet]="evolutionNodeTemplate"
+              [ngTemplateOutletContext]="{
+                $implicit: evolutionChain()!.chain,
+                isBase: true
+              }"
+            ></ng-container>
+          </div>
+          } @else {
+          <p class="text-gray-600">
+            {{ pokemonService.formatPokemonName(poke.name) }} does not evolve
+            further.
+          </p>
+          } } @else if (errorExtendedDetails() && !isLoadingExtendedDetails()) {
+          <p class="text-red-500">
+            Could not load evolution details: {{ errorExtendedDetails() }}
+          </p>
+          } @else if (!isLoadingExtendedDetails()) {
+          <p class="text-gray-500">Evolution data not available.</p>
+          }
         </div>
-        } @else {
-        <p class="text-gray-600">
-          {{ pokemonService.formatPokemonName(poke.name) }} does not evolve
-          further.
-        </p>
-        } } @else if (errorExtendedDetails() && !isLoadingExtendedDetails()) {
-        <p class="text-red-500">
-          Could not load evolution details: {{ errorExtendedDetails() }}
-        </p>
-        } @else if (!isLoadingExtendedDetails()) {
-        <p class="text-gray-500">Evolution data not available.</p>
-        }
       </div>
 
       <ng-template #evolutionNodeTemplate let-node let-isBase="isBase">
         <div
-          class="evolution-node flex items-center space-x-2 p-3 rounded-lg transition-all"
+          class="evolution-node flex items-center space-x-2 p-3 rounded-lg transition-all duration-200 ease-out"
           [class.bg-sky-50]="node.pokemonInfo?.id === pokemon()?.id"
           [class.border-sky-500]="node.pokemonInfo?.id === pokemon()?.id"
           [class.border]="node.pokemonInfo?.id === pokemon()?.id"
           [class.bg-gray-100]="node.pokemonInfo?.id !== pokemon()?.id"
+          [class.cursor-pointer]="node.pokemonInfo?.id !== pokemon()?.id"
+          [class.group]="node.pokemonInfo?.id !== pokemon()?.id"
+          [class.hover:ring-2]="node.pokemonInfo?.id !== pokemon()?.id"
+          [class.hover:ring-sky-300]="node.pokemonInfo?.id !== pokemon()?.id"
+          [class.hover:shadow-lg]="node.pokemonInfo?.id !== pokemon()?.id"
+          [class.hover:-translate-y-0.5]="
+            node.pokemonInfo?.id !== pokemon()?.id
+          "
+          [class.hover:scale-105]="node.pokemonInfo?.id !== pokemon()?.id"
+          (click)="onEvolutionClick(node)"
+          (keydown.enter)="onEvolutionClick(node)"
+          [attr.tabindex]="node.pokemonInfo?.id !== pokemon()?.id ? 0 : -1"
+          [attr.role]="node.pokemonInfo?.id !== pokemon()?.id ? 'button' : null"
+          [attr.aria-label]="
+            node.pokemonInfo?.id !== pokemon()?.id
+              ? 'View ' +
+                pokemonService.formatPokemonName(
+                  node.pokemonInfo?.name || node.species.name
+                )
+              : 'Current Pokémon'
+          "
+          [attr.aria-disabled]="node.pokemonInfo?.id === pokemon()?.id"
         >
           @if (node.pokemonInfo?.spriteUrl) {
           <img
@@ -212,7 +237,9 @@ import { FormsModule } from '@angular/forms';
           </div>
           }
           <div class="flex-grow">
-            <p class="font-bold text-gray-800 text-lg">
+            <p
+              class="font-bold text-gray-800 text-lg transition-colors group-hover:text-sky-700"
+            >
               {{
                 pokemonService.formatPokemonName(
                   node.pokemonInfo?.name || node.species.name
@@ -732,6 +759,40 @@ export class PokemonDetailComponent {
       },
       { allowSignalWrites: true }
     );
+  }
+
+  // Click handler for evolution nodes
+  async onEvolutionClick(link: EvolutionLink): Promise<void> {
+    const targetId =
+      link.pokemonInfo?.id ||
+      this.pokemonService.getPokemonId(link.species.url);
+    if (!targetId || targetId === this.pokemon()?.id) return;
+    await this.navigateToPokemonById(targetId);
+  }
+
+  // Load another Pokémon into the current detail view
+  private async navigateToPokemonById(pokemonId: number): Promise<void> {
+    this.loading.set(true);
+    this.error.set(null);
+    // Do not clear species/evolution to avoid layout shift; keep showing previous until new data arrives
+    this.selectedMoveDetails.set(null);
+    this.errorExtendedDetails.set(null);
+    this.errorMoveDetails.set(null);
+    this.showMoveDetailsModal.set(false);
+    try {
+      const fetchedPokemon = await this.pokemonService.fetchPokemons(pokemonId);
+      this.pokemon.set(fetchedPokemon);
+      await this.fetchExtendedDetails(fetchedPokemon.id);
+      if (typeof window !== 'undefined' && window?.scrollTo) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    } catch (err) {
+      this.error.set(
+        err instanceof Error ? err.message : 'Failed to load Pokémon details'
+      );
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   private async fetchExtendedDetails(pokemonId: number): Promise<void> {

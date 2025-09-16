@@ -40,6 +40,9 @@ import { MatIconModule } from '@angular/material/icon';
         <div class="w-full mx-auto">
           <div class="max-w-md mx-auto">
             <app-search-bar (search)="onSearchChange($event)" />
+            <small class="-mt-2 block text-center"
+              >&copy; Oksent & Axelka</small
+            >
           </div>
           <app-filter-type
             [selectedTypes]="selectedTypes()"
