@@ -1,4 +1,13 @@
-import { Component, output, signal, inject } from '@angular/core';
+import {
+  Component,
+  output,
+  signal,
+  inject,
+  input,
+  effect,
+  ElementRef,
+  HostListener,
+} from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { FormsModule } from '@angular/forms'; // Needed for ngModel
@@ -78,6 +87,11 @@ import {
 export class SearchBarComponent {
   search = output<string>();
   pokemonService = inject(PokemonService);
+  // Reference to host element for outside-click detection
+  private hostEl = inject(ElementRef<HTMLElement>);
+
+  // New input to receive current query from parent
+  query = input<string>('');
 
   searchQuerySignal = signal('');
   suggestions = signal<PokemonListItem[]>([]);
@@ -85,6 +99,14 @@ export class SearchBarComponent {
   private searchQuerySubject = new Subject<string>();
 
   constructor() {
+    // Keep the input field in sync with the parent-provided query without emitting another search
+    effect(() => {
+      const parentQuery = this.query();
+      if (parentQuery !== this.searchQuerySignal()) {
+        this.searchQuerySignal.set(parentQuery ?? '');
+      }
+    });
+
     this.searchQuerySubject
       .pipe(
         debounceTime(300),
@@ -107,6 +129,15 @@ export class SearchBarComponent {
       .subscribe((newSuggestions) => {
         this.suggestions.set(newSuggestions);
       });
+  }
+
+  // Close suggestions on outside click
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as Node | null;
+    if (target && !this.hostEl.nativeElement.contains(target)) {
+      if (this.suggestions().length) this.suggestions.set([]);
+    }
   }
 
   onSearchQueryChanged(query: string): void {

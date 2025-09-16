@@ -39,7 +39,10 @@ import { MatIconModule } from '@angular/material/icon';
         } @else {
         <div class="w-full mx-auto">
           <div class="max-w-md mx-auto">
-            <app-search-bar (search)="onSearchChange($event)" />
+            <app-search-bar
+              [query]="searchQuery()"
+              (search)="onSearchChange($event)"
+            />
             <small class="-mt-2 block text-center"
               >&copy; Oksent & Axelka</small
             >
